@@ -3,5 +3,5 @@
 TAPS=(
   homebrew/cask
   dimentium/autoraise
-  FelizKratz/formulae
+  FelixKratz/formulae
 )
