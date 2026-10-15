@@ -30,7 +30,7 @@ jobs:
           cask: false
 
       - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Ruby
         uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
@@ -72,7 +72,7 @@ jobs:
         # branches the committed cask.json collides with the one regenerated
         # on master, which shows up as a spurious merge conflict.
         if: github.ref == 'refs/heads/master'
-        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
+        uses: EndBug/add-and-commit@cc9c08ba6c8df3b93a8f2db63e89b98368ae2ae8 # v11.1.1
         with:
           add: 'cask.json'
           message: 'chore: Update api output'
