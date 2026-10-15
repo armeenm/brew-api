@@ -22,18 +22,18 @@ jobs:
     runs-on: macos-15
     steps:
       - name: Set up Homebrew
-        # Pinned to the 2026.10.12.1 CalVer release: Homebrew removed the
-        # "master" branch in 7.0.0 and recommends pinning a release or SHA.
-        uses: Homebrew/actions/setup-homebrew@eb02c69dbabdb66ff183c614f4ce7ab3c077592c
+        # Homebrew 7.0.0 removed the "master" branch; upstream recommends
+        # pinning a release or full SHA.
+        uses: Homebrew/actions/setup-homebrew@eb02c69dbabdb66ff183c614f4ce7ab3c077592c # 2026.10.12.1
         with:
           core: false
           cask: false
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Install Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
         with:
           bundler-cache: true
 
@@ -68,7 +68,11 @@ jobs:
         run: jq empty cask.json
 
       - name: Push changes
-        uses: EndBug/add-and-commit@v9
+        # Only commit generated output on the default branch. On pull request
+        # branches the committed cask.json collides with the one regenerated
+        # on master, which shows up as a spurious merge conflict.
+        if: github.ref == 'refs/heads/master'
+        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:
           add: 'cask.json'
           message: 'chore: Update api output'
