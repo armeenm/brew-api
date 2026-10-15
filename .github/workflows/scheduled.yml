@@ -68,6 +68,10 @@ jobs:
         run: jq empty cask.json
 
       - name: Push changes
+        # Only commit generated output on the default branch. On pull request
+        # branches the committed cask.json collides with the one regenerated
+        # on master, which shows up as a spurious merge conflict.
+        if: github.ref == 'refs/heads/master'
         uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:
           add: 'cask.json'
