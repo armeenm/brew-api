@@ -22,11 +22,12 @@ jobs:
     runs-on: macos-15
     steps:
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        # Pinned to the 2026.10.12.1 CalVer release: Homebrew removed the
+        # "master" branch in 7.0.0 and recommends pinning a release or SHA.
+        uses: Homebrew/actions/setup-homebrew@eb02c69dbabdb66ff183c614f4ce7ab3c077592c
         with:
           core: false
           cask: false
-          test-bot: false
 
       - name: Checkout repository
         uses: actions/checkout@v4
