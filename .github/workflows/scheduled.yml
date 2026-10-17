@@ -51,6 +51,18 @@ jobs:
             brew tap --force ${i}
           done
 
+          # Homebrew 6.0.0+ refuses to load formulae/casks from non-official
+          # taps unless the tap (or the individual item) has been trusted.
+          # Without this, generate-cask.rb silently skips every third-party
+          # cask. Official taps are always trusted, so only trust the rest.
+          # See https://docs.brew.sh/Tap-Trust
+          for i in "${TAPS[@]}"; do
+            case "$i" in
+              homebrew/*) ;;
+              *) brew trust --tap "${i}" ;;
+            esac
+          done
+
           brew update
 
           # Generate cask json files
