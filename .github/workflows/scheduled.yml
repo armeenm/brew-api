@@ -16,6 +16,10 @@ env:
   HOMEBREW_NO_ENV_HINTS: 1
   HOMEBREW_BOOTSNAP: 1
   HOMEBREW_NO_INSTALL_CLEANUP: 1
+  # Sanity floor for the published cask count. The taps here produced ~7800
+  # casks, so a much smaller number means generation broke for some of them
+  # (e.g. a tap loaded and the rest silently did not).
+  MIN_CASKS: 1000
 
 jobs:
   update:
@@ -104,9 +108,10 @@ jobs:
           jq empty cask.json
           count=$(jq 'length' cask.json 2>/dev/null || echo 0)
           echo "cask.json contains ${count} casks"
-          # An empty cask.json breaks every consumer of this repository.
-          if [ "${count}" -lt 1 ]; then
-            echo "::error::cask.json is empty; refusing to publish it"
+          # An empty (or drastically smaller) cask.json breaks every consumer
+          # of this repository, so never publish one.
+          if [ "${count}" -lt "${MIN_CASKS}" ]; then
+            echo "::error::cask.json has ${count} casks, fewer than the expected minimum of ${MIN_CASKS}; refusing to publish it"
             exit 1
           fi
 
