@@ -39,6 +39,13 @@ jobs:
 
       - name: Generate cask.json
         run: |
+          # Fail on the first error instead of carrying on and publishing an
+          # empty result.
+          set -euo pipefail
+
+          # Log the Homebrew version so a loader change is visible in the log.
+          brew --version
+
           # Clean up
           rm -rf _data/cask
           mkdir -p _data/cask
@@ -48,7 +55,7 @@ jobs:
 
           # Register all the taps
           for i in "${TAPS[@]}"; do
-            brew tap --force ${i}
+            brew tap --force "${i}"
           done
 
           # Homebrew 6.0.0+ refuses to load formulae/casks from non-official
@@ -65,19 +72,43 @@ jobs:
 
           brew update
 
-          # Generate cask json files
+          # Generate cask json files. generate-cask.rb exits non-zero when a
+          # tap has casks but none of them could be generated, which is how a
+          # broken cask loader (Homebrew 7.0.13+ rejecting paths) used to slip
+          # through as a successful, empty run.
           for i in "${TAPS[@]}"; do
-            brew ruby ./generate-cask.rb ${i}
+            before=$(find _data/cask -name '*.json' | wc -l)
+            brew ruby ./generate-cask.rb "${i}"
+            after=$(find _data/cask -name '*.json' | wc -l)
+            echo "Generated $((after - before)) casks for ${i}"
           done
 
-          # Merge cask json files to a single json file
-          echo "`jq -n '[inputs]' _data/cask/*.json`" > raw.json
+          # Merge cask json files to a single json file. `jq -s` is used
+          # directly (not inside `echo "$(...)"`) so that a jq failure such as
+          # an unmatched glob actually fails the step.
+          if ! compgen -G "_data/cask/*.json" > /dev/null; then
+            echo "::error::No cask data was generated at all"
+            exit 1
+          fi
+          jq -s '.' _data/cask/*.json > raw.json
 
       - name: Simplify cask.json
-        run: echo "`jq -c '[map(del(.tap_git_head,.tap,.installed_time,.installed,.ruby_source_path,.ruby_source_checksum))[]]' raw.json`" > cask.json && rm raw.json
+        run: |
+          set -euo pipefail
+          jq -c '[map(del(.tap_git_head,.tap,.installed_time,.installed,.ruby_source_path,.ruby_source_checksum))[]]' raw.json > cask.json
+          rm raw.json
 
       - name: Validate JSON
-        run: jq empty cask.json
+        run: |
+          set -euo pipefail
+          jq empty cask.json
+          count=$(jq 'length' cask.json 2>/dev/null || echo 0)
+          echo "cask.json contains ${count} casks"
+          # An empty cask.json breaks every consumer of this repository.
+          if [ "${count}" -lt 1 ]; then
+            echo "::error::cask.json is empty; refusing to publish it"
+            exit 1
+          fi
 
       - name: Push changes
         # Only commit generated output on the default branch. On pull request
